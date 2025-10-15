@@ -1,0 +1,53 @@
+<!DOCTYPE html> <html> <head> <meta charset="UTF-8"> <title>Smart Health App</title> </head> <body> <h1>Smart Health App</h1> <button id="getTokenBtn">Get FCM Token</button> <pre id="token">Waiting for token...</pre>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-app.js"
+  import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/10.14.0/firebase-messaging.js"
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyAShr1W6im1gM3dNmlEqtqEQzxns0bb-r8",
+    authDomain: "smarthealthapp-3d6a1.firebaseapp.com",
+    projectId: "smarthealthapp-3d6a1",
+    storageBucket: "smarthealthapp-3d6a1.firebasestorage.app",
+    messagingSenderId: "49817159971",
+    appId: "1:49817159971:web:2e7664ac5a2bcbe8b2a496",
+    measurementId: "G-PJJL2MQGZ8"
+  }
+
+  const app = initializeApp(firebaseConfig)
+  const messaging = getMessaging(app)
+
+  // register service worker then set button action
+  navigator.serviceWorker.register("/firebase-messaging-sw.js")
+  .then(registration => {
+    console.log("Service Worker registered", registration)
+    document.getElementById("getTokenBtn").addEventListener("click", async () => {
+      try {
+        const permission = await Notification.requestPermission()
+        if (permission !== "granted") {
+          alert("Allow notifications in the browser")
+          return
+        }
+        // paste your Public VAPID key below, no spaces
+        const vapidKey = "BCDZGGTCFcbb-SpPi4680YSEDAbiuCF9DjfUwSqo6r5Ld4hsX8LqbIUOekfjyt0kCxT-m06REMOLAYwEhs8HbgU"
+        const currentToken = await getToken(messaging, { vapidKey: vapidKey, serviceWorkerRegistration: registration })
+        console.log("FCM Token:", currentToken)
+        document.getElementById("token").innerText = currentToken || "No token"
+        if (!currentToken) alert("No token. Check console for errors")
+      } catch (err) {
+        console.error("Token error", err)
+        alert("Error getting token. See console")
+      }
+    })
+  })
+  .catch(err => {
+    console.error("SW register failed", err)
+    alert("Service worker registration failed. See console")
+  })
+
+  onMessage(messaging, payload => {
+    console.log("Foreground message", payload)
+    alert(payload.notification?.title || "Notification received")
+  })
+</script>
+
+</body> </html>
